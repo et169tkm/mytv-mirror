@@ -22,14 +22,13 @@ function fetch_loop() {
     
     $cdn_url = get_cdn_url();
     l($cdn_url);
-    $chunklist_and_effective_url = get_chunklist_and_effective_url($cdn_url);
-    $chunklist = $chunklist_and_effective_url[0];
-    $effective_url = $chunklist_and_effective_url[1];
-    l($chunklist);
-
+    $chunklist_list_and_effective_url = get_chunklist_list_and_effective_url($cdn_url);
+    $chunklist_list = $chunklist_list_and_effective_url[0];
+    $effective_url = $chunklist_list_and_effective_url[1];
+    $parsed_chunklist_list = parse_chunklist_list($chunklist_list);
 }
 
-function get_chunklist_and_effective_url($chunklist_url) {
+function get_chunklist_list_and_effective_url($chunklist_url) {
     l(__FUNCTION__."(), url: ".$chunklist_url);
     $c = new_curl($chunklist_url);
     curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
@@ -43,6 +42,40 @@ function get_chunklist_and_effective_url($chunklist_url) {
         l(__FUNCTION__." status :".$status);
         return null;
     }
+}
+
+function parse_chunklist_list($chunklist_list) {
+    $list = array();
+    $this_list = array();
+    $matches = null;
+    foreach(explode("\n", $chunklist_list) as $line) {
+        $line = trim($line);
+l("line: ".$line);
+        if ($line != "") {
+            if (preg_match("/^#/", $line)) {
+                if (preg_match("/.+:BANDWIDTH=(\d+)$/", $line, $matches)){
+                    $this_list["bandwidth"] = $matches[1];
+                }
+            } else {
+                // this is the file name
+                $this_list["filename"] = $line;
+                $list = insert_sorted($list, $this_list, "bandwidth");
+                $this_list = array();
+            }
+        }
+    }
+    return $list;
+}
+
+function insert_sorted($array, $element, $sort_key) {
+    for($i = 0; $i < count($array); $i++) {
+        if ($array[$i][$sort_key] > $element[$sort_key]){
+            $part1 = array_slice($array, 0, $i, true);
+            $part2 = array_slice($array, $i, count($array)-$i, true);
+            return array_merge($part1, array($element), $part2);
+        }
+    }
+    return array_merge($array, array($element));
 }
 
 function get_cdn_url() {
