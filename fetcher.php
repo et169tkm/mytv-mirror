@@ -20,8 +20,8 @@ function fetch_loop() {
 
     $db = array();
     $prefix = "jade";
-    $url = URL_TOKEN_INEWS;
-    $cookie_jar_path = DATA_DIR.$prefix."-".$t.".cookiejar";
+    $url = URL_TOKEN_JADE;
+    $cookie_jar_path = DATA_DIR.$prefix."-".$filetime.".cookiejar";
     
     
     $cdn_url = get_cdn_url();
@@ -34,9 +34,6 @@ function fetch_loop() {
     $parsed_chunklist_list = parse_chunklist_list($chunklist_list);
     $chunklist_filename = $parsed_chunklist_list[count($parsed_chunklist_list)-1]["filename"];
     $chunklist_url = str_replace("playlist.m3u8", $chunklist_filename, $effective_url);
-print_r($parsed_chunklist_list);
-l($effective_url);
-l($chunklist_url);
     $chunklist = download_chunklist($chunklist_url);
     if ($chunklist) {
         $chunklist = parse_chunklist($chunklist);
@@ -70,12 +67,12 @@ function download_chunks($chunklist, $effective_url) {
         $f = fopen(DATA_DIR.$prefix."-".intval($filetime).".ts", "w");
 
         curl_setopt($c, CURLOPT_FILE, $f);
-        curl_multi_add_handle($c);
+        curl_multi_add_handle($mh, $c);
 
         $connections[] = $c;
         $files[] = $f;
 
-        $filename += $chunk["duration"];
+        $filetime += $chunk["duration"];
     }
 
     //execute the handles
@@ -199,6 +196,10 @@ function new_curl($url) {
     curl_setopt($c, CURLOPT_COOKIEJAR, $cookie_jar_path);
     curl_setopt($c, CURLOPT_FOLLOWLOCATION, true);
     //curl_setopt($c, CURLOPT_USERAGENT, "curl/7.26.0");
+
+    curl_setopt($c, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+    curl_setopt($c, CURLOPT_PROXY, "localhost:1080");
+
     return $c;
 }
 function l($log){
