@@ -182,6 +182,7 @@ function download_chunks($chunklist, $effective_url) {
         }
     }
     curl_multi_close($mh);
+    db_save($db);
 }
 
 function db_is_file_downloaded(&$db, $filename) {
@@ -199,7 +200,11 @@ function db_add_file(&$db, $t, $filename, $duration) {
         "duration" => $duration
     );
 }
-function db_save($db) {
+function db_save(&$db) {
+    global $prefix;
+    $f = fopen(DATA_DIR.$prefix.".json", "w");
+    fwrite($f, json_encode($db));
+    fclose($f);
 }
 
 function parse_chunklist($chunklist) {
